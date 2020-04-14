@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"flag"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
-	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/go-github/github"
@@ -30,16 +31,20 @@ func SetupClient(ctx context.Context, s *Settings) *github.Client {
 }
 
 // GetIssueNumber prompts to create a new issue, or confirmation of auto-detected issue number
-func GetIssueNumber(ctx context.Context, client *github.Client, settings *Settings, detected int) (int, error) {
+func GetIssueNumber(ctx context.Context, client *github.Client, settings *Settings, detected int, interactive bool, title, description string, labels []string) (int, error) {
 	var issue int
 	if detected == 0 {
-		n, err := input.Ask("enter issue number (or 'c' to create)", "")
-		if err != nil {
-			return issue, err
+		var err error
+		n := "c"
+		if interactive {
+			n, err = input.Ask("enter issue number (or 'c' to create)", "")
+			if err != nil {
+				return issue, err
+			}
 		}
 		switch n {
 		case "", "c", "C":
-			return NewIssue(ctx, client, settings)
+			return NewIssue(ctx, client, settings, interactive, title, description, labels)
 		default:
 			return strconv.Atoi(n)
 		}
@@ -55,10 +60,12 @@ func GetIssueNumber(ctx context.Context, client *github.Client, settings *Settin
 }
 
 func main() {
-	if len(os.Args) > 1 {
-		fmt.Printf("git-open-pull v%s %s\n", Version, runtime.Version())
-		os.Exit(0)
-	}
+	description := flag.String("description-file", "", "path to PR description file")
+	labels := flag.String("labels", "","Comma separated PR Labels")
+	title := flag.String("title", "", "PR Title")
+	interactive := flag.Bool("interactive", true, "No command line interaction required")
+
+	flag.Parse()
 
 	ctx := context.Background()
 
@@ -66,6 +73,23 @@ func main() {
 	settings, err := LoadSettings(ctx)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	var labelSlice []string
+	if *labels != "" {
+		labelSlice = strings.Split(*labels, ",")
+		for idx := range labelSlice {
+			labelSlice[idx] = strings.Trim(labelSlice[idx], " ")
+		}
+	}
+
+	var descriptionString string
+	if *description != "" {
+		fileContent, err := ioutil.ReadFile(*description)
+		if err != nil {
+			log.Fatal(err)
+		}
+		descriptionString = string(fileContent)
 	}
 
 	branch, err := GitFeatureBranch(ctx)
@@ -87,7 +111,7 @@ func main() {
 	client := SetupClient(ctx, settings)
 
 	// create issue if needed
-	issueNumber, err := GetIssueNumber(ctx, client, settings, detectedIssueNumber)
+	issueNumber, err := GetIssueNumber(ctx, client, settings, detectedIssueNumber, *interactive, *title, descriptionString, labelSlice)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -97,22 +121,31 @@ func main() {
 
 	// Do we need/want to rename the branch?
 	if issueNumber != detectedIssueNumber {
-		yn, err := input.Ask(fmt.Sprintf("rename branch to %s_%d [Y/n]", branch, issueNumber), "")
-		if err != nil {
-			log.Fatal(err)
-		}
-		switch yn {
-		case "", "y", "Y":
-			fmt.Printf("renaming local branch %s to %s_%d\n", branch, branch, issueNumber)
+		if *interactive {
+			yn, err := input.Ask(fmt.Sprintf("rename branch to %s_%d [Y/n]", branch, issueNumber), "")
+			if err != nil {
+				log.Fatal(err)
+			}
+			switch yn {
+			case "", "y", "Y":
+				fmt.Printf("renaming local branch %s to %s_%d\n", branch, branch, issueNumber)
+				branch = fmt.Sprintf("%s_%d", branch, issueNumber)
+				_, err = RunGit(ctx, "branch", "-m", branch)
+				if err != nil {
+					log.Fatal(err)
+				}
+			case "n", "N":
+			default:
+				log.Fatalf("unknown response %q", yn)
+			}
+		} else {
 			branch = fmt.Sprintf("%s_%d", branch, issueNumber)
 			_, err = RunGit(ctx, "branch", "-m", branch)
 			if err != nil {
 				log.Fatal(err)
 			}
-		case "n", "N":
-		default:
-			log.Fatalf("unknown response %q", yn)
 		}
+
 	}
 
 	// confirm issue number is valid and issue is open
@@ -162,12 +195,14 @@ func main() {
 	fmt.Printf("Issue: %d (%s)\n", issueNumber, *issue.Title)
 	head := fmt.Sprintf("%s:%s", settings.User, branch)
 	fmt.Printf("pulling from %s into %s/%s branch %s\n", head, settings.BaseAccount, settings.BaseRepo, settings.BaseBranch)
-	yn, err := input.Ask("confirm [y/n]", "")
-	if err != nil {
-		log.Fatal(err)
-	}
-	if yn != "y" {
-		log.Fatal("exiting")
+	if *interactive {
+		yn, err := input.Ask("confirm [y/n]", "")
+		if err != nil {
+			log.Fatal(err)
+		}
+		if yn != "y" {
+			log.Fatal("exiting")
+		}
 	}
 
 	// convert Issue to PR
@@ -216,3 +251,4 @@ func main() {
 	}
 
 }
+
