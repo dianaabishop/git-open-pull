@@ -107,17 +107,15 @@ func PopulateIssueInteractive(ctx context.Context, client *github.Client, settin
 				// log.Printf("[%d] commit %s", i, c)
 				t, b, err := CommitDetails(ctx, c)
 				if err != nil {
-					return nil, err
+					return 0, err
 				}
 				if t == "" {
 					continue
 				}
-				switch {
-				case i == 0 && inputTitle == "":
+				switch i {
+				case 0:
 					fmt.Fprintf(tempFile, "%s\n", t)
-				case i == 0:
-					fmt.Fprintf(tempFile, "\n * %s\n", t)
-				case i == 1:
+				case 1:
 					fmt.Fprintf(tempFile, "\n * %s\n", t)
 				default:
 					fmt.Fprintf(tempFile, " * %s\n", t)
