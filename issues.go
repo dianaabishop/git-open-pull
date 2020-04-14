@@ -71,7 +71,7 @@ func NewIssue(ctx context.Context, client *github.Client, settings *Settings, in
 	return *i.Number, nil
 }
 
-// NewIssue creates a template, parses the template and returns the Issue number
+// NewIssue creates a template, parses the template and returns the Issue number if the user is in interactive mode
 func PopulateIssueInteractive(ctx context.Context, client *github.Client, settings *Settings, inputTitle, inputDescription string, labelSlice []string) (ir *github.IssueRequest, err error) {
 	labels, err := Labels(ctx, client, settings)
 	if err != nil {
