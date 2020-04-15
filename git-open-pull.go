@@ -17,13 +17,13 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func RenameBranch(ctx context.Context, branch string, issueNumber int) error {
+func RenameBranch(ctx context.Context, branch string, issueNumber int) (string, error) {
 	branch = fmt.Sprintf("%s_%d", branch, issueNumber)
 	_, err := RunGit(ctx, "branch", "-m", branch)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return branch, nil
 }
 
 func SetupClient(ctx context.Context, s *Settings) *github.Client {
@@ -137,7 +137,7 @@ func main() {
 			}
 			switch yn {
 			case "", "y", "Y":
-				err = RenameBranch(ctx, branch, issueNumber)
+				branch, err = RenameBranch(ctx, branch, issueNumber)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -146,7 +146,7 @@ func main() {
 				log.Fatalf("unknown response %q", yn)
 			}
 		} else {
-			err = RenameBranch(ctx, branch, issueNumber)
+			branch, err = RenameBranch(ctx, branch, issueNumber)
 			if err != nil {
 				log.Fatal(err)
 			}
