@@ -60,9 +60,9 @@ func GetIssueNumber(ctx context.Context, client *github.Client, settings *Settin
 }
 
 func main() {
-	description := flag.String("description-file", "", "path to PR description file")
+	description := flag.String("description-file", "", "path to PR description file - must be passed with title")
 	labels := flag.String("labels", "","Comma separated PR Labels")
-	title := flag.String("title", "", "PR Title")
+	title := flag.String("title", "", "PR Title - must also be passed with description")
 	interactive := flag.Bool("interactive", true, "No command line interaction required")
 
 	flag.Parse()
@@ -73,6 +73,10 @@ func main() {
 	settings, err := LoadSettings(ctx)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if *title != "" && *description == "" || *title == "" && *description != "" {
+		log.Fatal("Description and title must be passed together")
 	}
 
 	var labelSlice []string

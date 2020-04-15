@@ -90,38 +90,39 @@ func PopulateIssueInteractive(ctx context.Context, client *github.Client, settin
 	}
 	if inputDescription != "" {
 		fmt.Fprintf(tempFile, " * %s\n", inputDescription) 
-	}
-
-	// seed template with commit history
-	mergeBase, err := MergeBase(ctx, settings)
-	if err != nil {
-		log.Printf("error getting merge base %s", err)
 	} else {
-		// fmt.Printf("merge base is %s\n", mergeBase)
-		if mergeBase != "" {
-			commits, err := Commits(ctx, mergeBase)
-			if err != nil {
-				log.Printf("error getting commits %s", err)
-			}  
-			for i, c := range commits {
-				// log.Printf("[%d] commit %s", i, c)
-				t, b, err := CommitDetails(ctx, c)
+		// if no description provided
+		// seed template with commit history
+		mergeBase, err := MergeBase(ctx, settings)
+		if err != nil {
+			log.Printf("error getting merge base %s", err)
+		} else {
+			// fmt.Printf("merge base is %s\n", mergeBase)
+			if mergeBase != "" {
+				commits, err := Commits(ctx, mergeBase)
 				if err != nil {
-					return 0, err
-				}
-				if t == "" {
-					continue
-				}
-				switch i {
-				case 0:
-					fmt.Fprintf(tempFile, "%s\n", t)
-				case 1:
-					fmt.Fprintf(tempFile, "\n * %s\n", t)
-				default:
-					fmt.Fprintf(tempFile, " * %s\n", t)
-				}
-				if b != "" {
-					fmt.Fprintf(tempFile, "%s\n", b)
+					log.Printf("error getting commits %s", err)
+				}  
+				for i, c := range commits {
+					// log.Printf("[%d] commit %s", i, c)
+					t, b, err := CommitDetails(ctx, c)
+					if err != nil {
+						return nil, err
+					}
+					if t == "" {
+						continue
+					}
+					switch i {
+					case 0:
+						fmt.Fprintf(tempFile, "%s\n", t)
+					case 1:
+						fmt.Fprintf(tempFile, "\n * %s\n", t)
+					default:
+						fmt.Fprintf(tempFile, " * %s\n", t)
+					}
+					if b != "" {
+						fmt.Fprintf(tempFile, "%s\n", b)
+					}
 				}
 			}
 		}
