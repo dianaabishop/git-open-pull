@@ -46,17 +46,13 @@ func NewIssue(ctx context.Context, client *github.Client, settings *Settings, in
 
 		gir = &github.IssueRequest{
 			Title: &title,
+			Body: &description,
+			Assignee: &settings.User
 		}
 
-		if description != "" {
-			gir.Body = &description
-		}
 		if labels != nil {
 			gir.Labels = &labels
 		}
-		
-		gir.Assignee = &settings.User
-
 	}
 
 	i, _, err := client.Issues.Create(ctx, settings.BaseAccount, settings.BaseRepo, gir)
@@ -71,11 +67,16 @@ func NewIssue(ctx context.Context, client *github.Client, settings *Settings, in
 	return *i.Number, nil
 }
 
-// NewIssue creates a template, parses the template and returns the Issue number if the user is in interactive mode
+// PopulateIssueInteractive creates a template, parses the template and returns the Issue number if the user is in interactive mode
 func PopulateIssueInteractive(ctx context.Context, client *github.Client, settings *Settings, inputTitle, inputDescription string, labelSlice []string) (ir *github.IssueRequest, err error) {
 	labels, err := Labels(ctx, client, settings)
 	if err != nil {
 		return nil, err
+	}
+
+	labelSet := make(map[string]bool)
+	for _, l := range labelSlice {
+		labelSet[l] = true
 	}
 
 	tempFile, err := ioutil.TempFile("", "git-open-pull")
@@ -129,21 +130,11 @@ func PopulateIssueInteractive(ctx context.Context, client *github.Client, settin
 	io.WriteString(tempFile, "\n# Uncomment to assign labels\n")
 	for _, l := range labels {
 		// if labels are passed as command line input, uncomment them
-		labelMatch := false
-		if labelSlice != nil {
-			for _, labelInput := range labelSlice {
-				if labelInput == l {
-					fmt.Fprintf(tempFile, "Label: %s\n", l)
-					labelMatch = true
-					break
-				}
-			}
-			if labelMatch == false {
-				fmt.Fprintf(tempFile, "# Label: %s\n", l)
-			}
-		} else {
-			fmt.Fprintf(tempFile, "# Label: %s\n", l)
+		if labelSet[l] {
+		    fmt.Fprintf(tempFile, "Label: %s\n", l)
+		    continue
 		}
+		fmt.Fprintf(tempFile, "# Label: %s\n", l)
 	}
 
 	io.WriteString(tempFile, `

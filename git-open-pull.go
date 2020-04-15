@@ -17,6 +17,15 @@ import (
 	"golang.org/x/oauth2"
 )
 
+func RenameBranch(ctx context.Context, branch string, issueNumber int) error {
+	branch = fmt.Sprintf("%s_%d", branch, issueNumber)
+	_, err = RunGit(ctx, "branch", "-m", branch)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func SetupClient(ctx context.Context, s *Settings) *github.Client {
 	if s == nil {
 		panic("missing settings")
@@ -128,9 +137,7 @@ func main() {
 			}
 			switch yn {
 			case "", "y", "Y":
-				fmt.Printf("renaming local branch %s to %s_%d\n", branch, branch, issueNumber)
-				branch = fmt.Sprintf("%s_%d", branch, issueNumber)
-				_, err = RunGit(ctx, "branch", "-m", branch)
+				err = RenameBranch(ctx, branch, issueNumber)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -139,8 +146,7 @@ func main() {
 				log.Fatalf("unknown response %q", yn)
 			}
 		} else {
-			branch = fmt.Sprintf("%s_%d", branch, issueNumber)
-			_, err = RunGit(ctx, "branch", "-m", branch)
+			err = RenameBranch(ctx, branch, issueNumber)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -200,7 +206,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		if yn != "y" {
+		if strings.ToLower(yn) != "y" {
 			log.Fatal("exiting")
 		}
 	}
@@ -251,4 +257,3 @@ func main() {
 	}
 
 }
-
