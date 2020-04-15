@@ -40,6 +40,7 @@ type Settings struct {
 	Callback string
 }
 
+// this function tries to get settings from the environment variables
 func GetEnvSettings(s *Settings) error {
 		s.Token = os.Getenv("GITOPENPULL_TOKEN")
 		s.User = os.Getenv("GITOPENPULL_USER")
