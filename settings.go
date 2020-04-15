@@ -40,7 +40,7 @@ type Settings struct {
 
 // LoadSettings extracts the git and gitOpenPull sections from $HOME/.gitconfig and .git/config
 func LoadSettings(ctx context.Context) (*Settings, error) {
-
+	// blah
 	body, err := RunGit(ctx, "config", "--list")
 	if err != nil {
 		return nil, err
