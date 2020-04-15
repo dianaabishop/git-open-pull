@@ -17,6 +17,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// RenameBranch renames the branch to contain the issue number
 func RenameBranch(ctx context.Context, branch string, issueNumber int) error {
 	branch = fmt.Sprintf("%s_%d", branch, issueNumber)
 	_, err := RunGit(ctx, "branch", "-m", branch)
