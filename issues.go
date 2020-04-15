@@ -211,13 +211,13 @@ func PopulateIssueInteractive(ctx context.Context, client *github.Client, settin
 		}
 	}
 
-	// var description string
+	var description string
 	// if inputDescription != "" {
 	// 	description = inputDescription
 	// } else {
 	// 	description = strings.TrimSpace(strings.Join(descriptions, "\n"))
 	// }
-	description = strings.TrimSpace(strings.Join(descriptions, "\n"))
+	// description = strings.TrimSpace(strings.Join(descriptions, "\n"))
 
 	if title == "" {
 		return nil, fmt.Errorf("missing title")
