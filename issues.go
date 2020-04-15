@@ -107,7 +107,7 @@ func PopulateIssueInteractive(ctx context.Context, client *github.Client, settin
 				// log.Printf("[%d] commit %s", i, c)
 				t, b, err := CommitDetails(ctx, c)
 				if err != nil {
-					return 0, err
+					return nil, err
 				}
 				if t == "" {
 					continue
