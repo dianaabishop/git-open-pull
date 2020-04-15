@@ -47,7 +47,7 @@ func NewIssue(ctx context.Context, client *github.Client, settings *Settings, in
 		gir = &github.IssueRequest{
 			Title: &title,
 			Body: &description,
-			Assignee: &settings.User
+			Assignee: &settings.User,
 		}
 
 		if labels != nil {

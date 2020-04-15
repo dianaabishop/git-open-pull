@@ -19,7 +19,7 @@ import (
 
 func RenameBranch(ctx context.Context, branch string, issueNumber int) error {
 	branch = fmt.Sprintf("%s_%d", branch, issueNumber)
-	_, err = RunGit(ctx, "branch", "-m", branch)
+	_, err := RunGit(ctx, "branch", "-m", branch)
 	if err != nil {
 		return err
 	}
@@ -69,10 +69,10 @@ func GetIssueNumber(ctx context.Context, client *github.Client, settings *Settin
 }
 
 func main() {
-	description := flag.String("description-file", "", "path to PR description file")
+	description := flag.String("description-file", "", "Path to PR description file")
 	labels := flag.String("labels", "","Comma separated PR Labels")
 	title := flag.String("title", "", "PR Title")
-	interactive := flag.Bool("interactive", true, "No command line interaction required")
+	interactive := flag.Bool("interactive", true, "Toggles interactive mode")
 
 	flag.Parse()
 
