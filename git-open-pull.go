@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -73,8 +74,14 @@ func main() {
 	labels := flag.String("labels", "","Comma separated PR Labels")
 	title := flag.String("title", "", "PR Title")
 	interactive := flag.Bool("interactive", true, "Toggles interactive mode")
+	version := flag.Bool("version", false, "Prints current version")
 
 	flag.Parse()
+
+	if *version {
+		fmt.Printf("git-open-pull v%s %s\n", Version, runtime.Version())
+		os.Exit(0)
+	}
 
 	ctx := context.Background()
 
@@ -88,7 +95,7 @@ func main() {
 	if *labels != "" {
 		labelSlice = strings.Split(*labels, ",")
 		for idx := range labelSlice {
-			labelSlice[idx] = strings.Trim(labelSlice[idx], " ")
+			labelSlice[idx] = strings.TrimSpace(labelSlice[idx])
 		}
 	}
 
